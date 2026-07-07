@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Minecraft Soundtrack Player</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#1b1b1b;color:#e8e8e8;margin:0;display:flex;min-height:100vh;align-items:center;justify-content:center}
+ .player{background:#262626;border-radius:16px;padding:24px;width: min(720px,92vw);box-shadow:0 8px 32px rgba(0,0,0,.6)}
+ h1{margin:0 0 16px;font-size:20px;font-weight:600}
+ select{width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:#333;color:#eee;font-size:15px;margin-bottom:16px}
+ .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+ button{background:#3a7bd5;border:none;color:white;padding:10px 14px;border-radius:8px;font-size:14px;cursor:pointer}
+ button:hover{background:#4a8be5}
+ button.secondary{background:#444}
+ button.secondary:hover{background:#555}
+ .time{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums;font-size:13px;color:#aaa;margin-bottom:4px}
+ input[type=range]{width:100%;margin:8px 0}
+ .row{display:flex;gap:12px;align-items:center;margin-top:12px}
+ label{font-size:13px;color:#bbb;min-width:60px}
+ .vol{flex:1}
+ .seek-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+ .seek-row button{padding:6px 10px;font-size:13px;background:#444}
+ .now{font-size:14px;color:#ccc;margin:8px 0;min-height:1.2em}
+ audio{width:100%;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="player">
+<h1>Minecraft Soundtrack — 92 tracks</h1>
+<select id="trackSelect"></select>
+<div class="now" id="nowPlaying">-</div>
+<audio id="audio" controls style="display:none"></audio>
+<div class="time"><span id="cur">0:00</span><span id="dur">0:00</span></div>
+<input type="range" id="seek" min="0" max="1000" value="0" step="1">
+<div class="controls">
+ <button id="prev">⏮ Prev</button>
+ <button id="play">▶ Play</button>
+ <button id="next">Next ⏭</button>
+ <button class="secondary" id="r30">-30s</button>
+ <button class="secondary" id="r10">-10s</button>
+ <button class="secondary" id="f10">+10s</button>
+ <button class="secondary" id="f30">+30s</button>
+</div>
+<div class="row">
+ <label for="vol">Volume</label>
+ <input class="vol" type="range" id="vol" min="0" max="1" step="0.01" value="0.8">
+ <span id="volv">80%</span>
+</div>
+<div class="seek-row">
+ <span style="color:#888;font-size:13px;align-self:center">Jump to:</span>
+ <button data-pct="0">Start</button>
+ <button data-pct="0.25">25%</button>
+ <button data-pct="0.5">50%</button>
+ <button data-pct="0.75">75%</button>
+ <button data-pct="0.9">90%</button>
+ <button data-pct="0.99">End-1%</button>
+</div>
+<div style="margin-top:16px;font-size:12px;color:#777">Serving from ~/minecraft-player/songs — 92 MP3s, ~6h46m total. Use arrow keys ← → for ±10s, space for play/pause.</div>
+</div>
+<script>
+const tracks = ["11.mp3", "13.mp3", "5.mp3", "a_familiar_room.mp3", "aerie.mp3", "alpha.mp3", "an_ordinary_day.mp3", "ancestry.mp3", "aria_math.mp3", "axolotl.mp3", "ballad_of_the_cats.mp3", "beginning_2.mp3", "below_and_above.mp3", "biome_fest.mp3", "blind_spots.mp3", "blocks.mp3", "boss.mp3", "bounce.mp3", "broken_clocks.mp3", "bromeliad.mp3", "cat.mp3", "chirp.mp3", "chrysopoeia.mp3", "clark.mp3", "comforting_memories.mp3", "concrete_halls.mp3", "creator_music_box.mp3", "creator.mp3", "crescent_dunes.mp3", "danny.mp3", "dead_voxel.mp3", "deeper.mp3", "dragon_fish.mp3", "dreiton.mp3", "dry_hands.mp3", "ebb.mp3", "echo_in_the_wind.mp3", "eld_unknown.mp3", "endless.mp3", "far.mp3", "featherfall.mp3", "firebugs.mp3", "fireflies.mp3", "floating_dream.mp3", "floating_trees.mp3", "haggstrom.mp3", "haunt_muskie.mp3", "home.mp3", "infinite_amethyst.mp3", "key.mp3", "komorebi.mp3", "labyrinthine.mp3", "lava_chicken.mp3", "left_to_bloom.mp3", "lilypad.mp3", "living_mice.mp3", "mall.mp3", "mellohi.mp3", "memories.mp3", "mice_on_venus.mp3", "minecraft.mp3", "moog_city_2.mp3", "mutation.mp3", "nightly.mp3", "one_more_day.mp3", "os_piano.mp3", "otherside.mp3", "oxygene.mp3", "pigstep.mp3", "pokopoko.mp3", "precipice.mp3", "puzzlebox.mp3", "relic.mp3", "rubedo.mp3", "shores.mp3", "shuniji.mp3", "so_below.mp3", "stal.mp3", "stand_tall.mp3", "strad.mp3", "subwoofer_lullaby.mp3", "sweden.mp3", "taswell.mp3", "tears.mp3", "the_end.mp3", "wait.mp3", "ward.mp3", "warmth.mp3", "watcher.mp3", "wending.mp3", "wet_hands.mp3", "yakusoku.mp3"];
+const sel=document.getElementById('trackSelect');
+const audio=document.getElementById('audio');
+const playBtn=document.getElementById('play');
+const prevBtn=document.getElementById('prev');
+const nextBtn=document.getElementById('next');
+const seek=document.getElementById('seek');
+const curEl=document.getElementById('cur');
+const durEl=document.getElementById('dur');
+const vol=document.getElementById('vol');
+const volv=document.getElementById('volv');
+const nowEl=document.getElementById('nowPlaying');
+let idx=0;
+tracks.forEach((t,i)=>{const o=document.createElement('option');o.value=i;o.textContent=t.replace('.mp3','');sel.appendChild(o);});
+function fmt(s){if(isNaN(s))return'0:00';const m=Math.floor(s/60);const sec=Math.floor(s%60).toString().padStart(2,'0');return m+':'+sec;}
+function load(i,autoplay=true){idx=(i+tracks.length)%tracks.length;sel.value=idx;const name=tracks[idx];audio.src='songs/'+encodeURIComponent(name);nowEl.textContent='Now: '+name.replace('.mp3','');audio.load();if(autoplay)audio.play();}
+function toggle(){if(audio.paused){audio.play()}else{audio.pause()}}
+sel.onchange=()=>load(parseInt(sel.value));
+playBtn.onclick=toggle;
+prevBtn.onclick=()=>load(idx-1);
+nextBtn.onclick=()=>load(idx+1);
+document.getElementById('r10').onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-10);
+document.getElementById('r30').onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-30);
+document.getElementById('f10').onclick=()=>audio.currentTime=Math.min(audio.duration||0,audio.currentTime+10);
+document.getElementById('f30').onclick=()=>audio.currentTime=Math.min(audio.duration||0,audio.currentTime+30);
+document.querySelectorAll('[data-pct]').forEach(b=>b.onclick=()=>{if(audio.duration)audio.currentTime=audio.duration*parseFloat(b.dataset.pct)});
+vol.oninput=()=>{audio.volume=parseFloat(vol.value);volv.textContent=Math.round(vol.value*100)+'%';};
+audio.volume=0.8;
+audio.ontimeupdate=()=>{if(audio.duration){seek.value=audio.currentTime/audio.duration*1000;curEl.textContent=fmt(audio.currentTime);}};
+audio.onloadedmetadata=()=>{durEl.textContent=fmt(audio.duration);};
+audio.onplay=()=>playBtn.textContent='⏸ Pause';
+audio.onpause=()=>playBtn.textContent='▶ Play';
+audio.onended=()=>load(idx+1);
+seek.oninput=()=>{if(audio.duration)audio.currentTime=seek.value/1000*audio.duration;};
+document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();toggle();}else if(e.code==='ArrowLeft'){audio.currentTime=Math.max(0,audio.currentTime-10);}else if(e.code==='ArrowRight'){audio.currentTime=Math.min(audio.duration||0,audio.currentTime+10);}});
+load(0,false);
+</script>
+</body>
+</html>
